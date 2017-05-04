@@ -74,7 +74,7 @@ def build_vggnet_graph(input, vggnet):
     vgg_layers = vggnet['layers'][0]
     num_vgg_layer = vgg_layers.shape[0]
 
-    layers = [input]
+    prev_layer  = input
     conv_layers = []
 
     for i in range(0, num_vgg_layer):
@@ -83,16 +83,14 @@ def build_vggnet_graph(input, vggnet):
 
         # extend layer
         if layer_type == 'conv':
-            layer = conv_layer(layers[i], vgg_layers[i][0][0][2][0])
+            layer = conv_layer(prev_layer, vgg_layers[i][0][0][2][0])
         elif layer_type == 'relu':
-            layer = relu_layer(layers[i])
+            layer = relu_layer(prev_layer)
         elif layer_type == 'pool':
-            layer = pool_layer(layers[i])
+            layer = pool_layer(prev_layer)
 
         # met unknown layer type 
         assert layer != ''
-
-        layers.append(layer)
 
         # build enough?
         if layer_type == 'conv':
@@ -100,6 +98,9 @@ def build_vggnet_graph(input, vggnet):
  
             if len(conv_layers) >= 5:
                 break
+
+		# update previous layer
+        prev_layer = layer
 
     assert len(conv_layers) == 5
 
@@ -133,11 +134,11 @@ sess = tf.Session()
 init = tf.global_variables_initializer()
 sess.run(init)
 
-Lcontent = sess.run(conv_layers[3], feed_dict={input: content_image})
+P = sess.run(conv_layers[3], feed_dict={input: content_image})
 #print(np.array(Lcontent).shape)
 
 # generate style representation
-Lstyle   = sess.run(conv_layers, feed_dict={input: style_image})
+A = sess.run(conv_layers, feed_dict={input: style_image})
 
 #print(np.array(Lstyle[0]).shape)
 #print(np.array(Lstyle[1]).shape)
